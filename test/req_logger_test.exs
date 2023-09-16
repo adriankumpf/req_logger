@@ -13,7 +13,7 @@ defmodule ReqLoggerTest do
     {:ok, bypass: bypass, req: req}
   end
 
-  test "logs successfull requests", %{bypass: bypass, req: req} do
+  test "logs successful requests", %{bypass: bypass, req: req} do
     Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
 
     assert capture_log(fn ->
