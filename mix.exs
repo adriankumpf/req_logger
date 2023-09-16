@@ -7,7 +7,8 @@ defmodule ReqLogger.MixProject do
       version: "0.1.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs()
     ]
   end
 
@@ -22,7 +23,15 @@ defmodule ReqLogger.MixProject do
   defp deps do
     [
       {:req, "~> 0.4.0"},
-      {:bypass, "~> 2.1", only: :test}
+      {:bypass, "~> 2.1", only: :test},
+      {:ex_doc, "~> 0.16", only: :dev, runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "ReqLogger",
+      extras: ["README.md"]
     ]
   end
 end
