@@ -1,21 +1,29 @@
 # ReqLogger
 
-**TODO: Add description**
+[Req](https://github.com/wojtekmach/req) Logger plugin.
 
 ## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `req_logger` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:req_logger, "~> 0.1.0"}
+    {:req_logger, "~> 0.1.0", github: "adriankumpf/req_logger"}
   ]
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/req_logger>.
+## Usage
 
+```elixir
+Mix.install([
+  {:req, "~> 0.4.3"},
+  {:req_logger, "~> 0.1.0", github: "adriankumpf/req_logger"}
+])
+
+req =
+  Req.new()
+  |> ReqLogger.attach()
+
+Req.get!(req, url: "https://httpbin.org/status/201?a=1")
+# [info] GET https://httpbin.org/status/201 -> 201
+```
