@@ -50,7 +50,7 @@ defmodule ReqLogger do
       :method -> request.method |> Atom.to_string() |> String.upcase()
       :url -> request.url |> Map.put(:query, nil) |> URI.to_string()
       :status when is_struct(response, Req.Response) -> to_string(response.status)
-      :status when is_exception(response) -> "error: " <> Exception.message(response)
+      :status when is_exception(response) -> ["error: ", Exception.message(response)]
       string -> string
     end)
   end

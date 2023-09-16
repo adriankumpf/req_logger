@@ -22,6 +22,7 @@ defmodule ReqLogger.MixProject do
   defp deps do
     [
       {:req, "~> 0.4.0"},
+      {:bypass, "~> 2.1", only: :test}
     ]
   end
 end
