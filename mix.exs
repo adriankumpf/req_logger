@@ -22,7 +22,7 @@ defmodule ReqLogger.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:req, "~> 0.4.0"},
+      {:req, "~> 0.5.6"},
       {:bypass, "~> 2.1", only: :test},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false}
     ]
