@@ -81,6 +81,18 @@ defmodule ReqLoggerTest do
            end) =~ "[debug] GET http://localhost:#{bypass.port} -> 200"
   end
 
+  test "allows to configure the log level when attaching the plugin", %{bypass: bypass} do
+    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+
+    req =
+      Req.new(base_url: "http://localhost:#{bypass.port}", redirect: false, retry: false)
+      |> ReqLogger.attach(log_level: &custom_log_level/1)
+
+    assert capture_log(fn ->
+             Req.get(req)
+           end) =~ "[debug] GET http://localhost:#{bypass.port} -> 200"
+  end
+
   test "strips query string from logged URL", %{bypass: bypass, req: req} do
     Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
 
@@ -104,6 +116,27 @@ defmodule ReqLoggerTest do
 
     assert log =~ "/search -> 200"
     refute log =~ "secret"
+  end
+
+  test "strips query string and fragment from logged URL", %{bypass: bypass, req: req} do
+    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+
+    log =
+      capture_log(fn ->
+        Req.get(req, url: "/search?q=secret#token")
+      end)
+
+    assert log =~ "/search -> 200"
+    refute log =~ "secret"
+    refute log =~ "token"
+  end
+
+  test "logs request method", %{bypass: bypass, req: req} do
+    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 201, ""))
+
+    assert capture_log(fn ->
+             Req.post(req, url: "/events", json: %{name: "created"})
+           end) =~ "[info] POST http://localhost:#{bypass.port}/events -> 201"
   end
 
   test "custom log_level option is ignored for exceptions", %{bypass: bypass} do
