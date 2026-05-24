@@ -22,10 +22,10 @@ defmodule ReqLoggerTest do
       end)
 
     assert log =~ "[info] GET http://localhost:#{bypass.port}/health -> 200"
-    assert log =~ ~r/200 \(\d+(µs|ms|\d+\.\ds)\)/
+    assert_logged_duration(log)
   end
 
-  test "logs 3xx requests with log level :warn", %{bypass: bypass, req: req} do
+  test "logs 3xx requests with log level :warning", %{bypass: bypass, req: req} do
     Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 308, ""))
 
     log =
@@ -34,7 +34,7 @@ defmodule ReqLoggerTest do
       end)
 
     assert log =~ "[warning] GET http://localhost:#{bypass.port} -> 308"
-    assert log =~ ~r/308 \(\d+(µs|ms|\d+\.\ds)\)/
+    assert_logged_duration(log)
   end
 
   test "logs 4xx requests with log level :error", %{bypass: bypass, req: req} do
@@ -46,7 +46,7 @@ defmodule ReqLoggerTest do
       end)
 
     assert log =~ "[error] GET http://localhost:#{bypass.port} -> 404"
-    assert log =~ ~r/404 \(\d+(µs|ms|\d+\.\ds)\)/
+    assert_logged_duration(log)
   end
 
   test "logs 5xx requests with log level :error", %{bypass: bypass, req: req} do
@@ -58,7 +58,7 @@ defmodule ReqLoggerTest do
       end)
 
     assert log =~ "[error] GET http://localhost:#{bypass.port} -> 503"
-    assert log =~ ~r/503 \(\d+(µs|ms|\d+\.\ds)\)/
+    assert_logged_duration(log)
   end
 
   test "logs failed requests with log level :error", %{bypass: bypass, req: req} do
@@ -70,7 +70,7 @@ defmodule ReqLoggerTest do
       end)
 
     assert log =~ "[error] GET http://localhost:#{bypass.port} -> error: connection refused"
-    assert log =~ ~r/connection refused \(\d+(µs|ms|\d+\.\ds)\)/
+    assert_logged_duration(log)
   end
 
   test "allows to configure the log level", %{bypass: bypass, req: req} do
@@ -92,6 +92,18 @@ defmodule ReqLoggerTest do
     assert log =~ "/search -> 200"
     refute log =~ "secret"
     refute log =~ "token"
+  end
+
+  test "strips fragment from logged URL", %{bypass: bypass, req: req} do
+    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+
+    log =
+      capture_log(fn ->
+        Req.get(req, url: "/search#secret")
+      end)
+
+    assert log =~ "/search -> 200"
+    refute log =~ "secret"
   end
 
   test "custom log_level option is ignored for exceptions", %{bypass: bypass} do
@@ -134,9 +146,7 @@ defmodule ReqLoggerTest do
         Req.get!(req, url: "/retry")
       end)
 
-    lines = String.split(log, "\n", trim: true)
-
-    req_logger_lines = Enum.filter(lines, &(&1 =~ "GET http://localhost:"))
+    req_logger_lines = req_logger_lines(log)
 
     error_lines = Enum.filter(req_logger_lines, &(&1 =~ "[error]"))
     info_lines = Enum.filter(req_logger_lines, &(&1 =~ "[info]"))
@@ -145,8 +155,18 @@ defmodule ReqLoggerTest do
     assert length(info_lines) == 1
 
     for line <- req_logger_lines do
-      assert line =~ ~r/\(\d+(µs|ms|\d+\.\ds)\)(\e\[0m)?$/
+      assert_logged_duration(line)
     end
+  end
+
+  defp assert_logged_duration(log) do
+    assert log =~ ~r/\(\d+(µs|ms|\d+\.\ds)\)(\e\[0m)?/
+  end
+
+  defp req_logger_lines(log) do
+    log
+    |> String.split("\n", trim: true)
+    |> Enum.filter(&(&1 =~ "GET http://localhost:"))
   end
 
   defp custom_log_level(%Req.Response{}), do: :debug

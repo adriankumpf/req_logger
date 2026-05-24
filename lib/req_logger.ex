@@ -8,13 +8,16 @@ defmodule ReqLogger do
 
   - `:log_level` - custom function that receives the `Req.Response` for calculating log level.
     Defaults to `:info` for 2xx responses, `:warning` for 3xx responses and `:error` for 4xx and
-    5xxing responses.
+    5xx responses.
 
   """
 
   require Logger
 
-  @type log_level_option :: {:log_level, (Req.Response.t() -> Logger.level())}
+  @duration_key :req_logger_duration
+
+  @type log_level_fun :: (Req.Response.t() -> Logger.level())
+  @type log_level_option :: {:log_level, log_level_fun()}
   @type opts :: [log_level_option()]
 
   @doc """
@@ -37,38 +40,44 @@ defmodule ReqLogger do
     |> Req.Request.prepend_error_steps(req_logger_log_message: &log_message/1)
   end
 
-  defp wrap_adapter(request) do
-    adapter = request.adapter
-
-    wrapped = fn req ->
+  defp wrap_adapter(%Req.Request{adapter: adapter} = request) do
+    wrapped_adapter = fn req ->
       start = System.monotonic_time()
       {req, result} = adapter.(req)
       duration = System.monotonic_time() - start
-      {Req.Request.put_private(req, :req_logger_duration, duration), result}
+
+      {Req.Request.put_private(req, @duration_key, duration), result}
     end
 
-    %{request | adapter: wrapped}
+    %{request | adapter: wrapped_adapter}
   end
 
   defp log_message({request, response}) do
     level = log_level(response, request.options)
-    duration = format_duration(request.private.req_logger_duration)
+    duration = request.private |> Map.fetch!(@duration_key) |> format_duration()
+
     Logger.log(level, fn -> format(request, response, duration) end)
+
     {request, response}
   end
 
   defp format(request, response, duration) do
-    method = request.method |> Atom.to_string() |> String.upcase()
-    url = request.url |> Map.put(:query, nil) |> URI.to_string()
-
-    status =
-      case response do
-        %Req.Response{status: status} -> to_string(status)
-        exception when is_exception(exception) -> ["error: ", Exception.message(exception)]
-      end
+    method = request.method |> to_string() |> String.upcase()
+    url = format_url(request.url)
+    status = format_status(response)
 
     [method, " ", url, " -> ", status, " (", duration, ")"]
   end
+
+  defp format_url(%URI{} = url) do
+    %URI{url | query: nil, fragment: nil}
+    |> URI.to_string()
+  end
+
+  defp format_status(%Req.Response{status: status}), do: to_string(status)
+
+  defp format_status(exception) when is_exception(exception),
+    do: ["error: ", Exception.message(exception)]
 
   defp format_duration(duration_native) do
     duration_us = System.convert_time_unit(duration_native, :native, :microsecond)
