@@ -2,13 +2,18 @@ defmodule ReqLogger do
   @moduledoc """
   `Req` Logger plugin.
 
-  Logs the request method, URL and response status with Elixir's Logger.
+  Logs the request method, URL, response status and duration with Elixir's Logger.
+
+  Query strings and URL fragments are stripped from logged URLs to avoid logging common places
+  for sensitive values.
+
+  When Req retries a request, each retry attempt is logged separately.
 
   ## Options
 
   - `:log_level` - custom function that receives the `Req.Response` for calculating log level.
     Defaults to `:info` for 2xx responses, `:warning` for 3xx responses and `:error` for 4xx and
-    5xx responses.
+    5xx responses. Failed requests are always logged as `:error`.
 
   """
 
