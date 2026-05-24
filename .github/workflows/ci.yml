@@ -3,6 +3,8 @@ name: CI
 on:
   pull_request:
   push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -20,7 +22,12 @@ jobs:
           - pair:
               elixir: "1.15.4"
               otp: "26.0"
-            lint: lint
+              version_type: "strict"
+          - pair:
+              elixir: "1.19.x"
+              otp: "29.x"
+              version_type: "loose"
+            lint: true
     steps:
       - uses: actions/checkout@v6
 
@@ -29,7 +36,7 @@ jobs:
         with:
           otp-version: ${{matrix.pair.otp}}
           elixir-version: ${{matrix.pair.elixir}}
-          version-type: "strict"
+          version-type: ${{matrix.pair.version_type}}
 
       - name: Cache deps
         id: cache-deps
