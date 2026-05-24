@@ -16,7 +16,7 @@ end
 
 ```elixir
 Mix.install([
-  {:req, "~> 0.4.3"},
+  {:req, "~> 0.5.0"},
   {:req_logger, "~> 0.1.0", github: "adriankumpf/req_logger"}
 ])
 
@@ -25,5 +25,5 @@ req =
   |> ReqLogger.attach()
 
 Req.get!(req, url: "https://httpbin.org/status/201?a=1")
-# [info] GET https://httpbin.org/status/201 -> 201
+# [info] GET https://httpbin.org/status/201 -> 201 (3ms)
 ```
