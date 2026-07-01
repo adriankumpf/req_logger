@@ -38,7 +38,7 @@ jobs:
               version_type: "loose"
             lint: true
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: erlef/setup-beam@v1
         id: beam
