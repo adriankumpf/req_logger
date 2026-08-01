@@ -19,7 +19,7 @@ defmodule ReqLogger do
 
   require Logger
 
-  @duration_key :req_logger_duration
+  @start_time_key :req_logger_start_time
 
   @type log_level_fun :: (Req.Response.t() -> Logger.level())
   @type log_level_option :: {:log_level, log_level_fun()}
@@ -40,26 +40,19 @@ defmodule ReqLogger do
     request
     |> Req.Request.register_options([:log_level])
     |> Req.Request.merge_options(opts)
-    |> Req.Request.append_request_steps(req_logger_wrap_adapter: &wrap_adapter/1)
+    |> Req.Request.append_request_steps(req_logger_start_time: &put_start_time/1)
     |> Req.Request.prepend_response_steps(req_logger_log_message: &log_message/1)
     |> Req.Request.prepend_error_steps(req_logger_log_message: &log_message/1)
   end
 
-  defp wrap_adapter(%Req.Request{adapter: adapter} = request) do
-    wrapped_adapter = fn req ->
-      start = System.monotonic_time()
-      {req, result} = adapter.(req)
-      duration = System.monotonic_time() - start
-
-      {Req.Request.put_private(req, @duration_key, duration), result}
-    end
-
-    %{request | adapter: wrapped_adapter}
+  defp put_start_time(request) do
+    Req.Request.put_private(request, @start_time_key, System.monotonic_time())
   end
 
   defp log_message({request, response}) do
     level = log_level(response, request.options)
-    duration = request.private |> Map.fetch!(@duration_key) |> format_duration()
+    start = Map.fetch!(request.private, @start_time_key)
+    duration = format_duration(System.monotonic_time() - start)
 
     Logger.log(level, fn -> format(request, response, duration) end)
 

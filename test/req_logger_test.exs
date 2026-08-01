@@ -164,12 +164,17 @@ defmodule ReqLoggerTest do
       end
     end)
 
+    # A large retry delay makes the per-attempt vs. cumulative distinction observable:
+    # the timer is reset at the start of each attempt (a request step re-run on every
+    # retry), so no attempt's duration includes the retry sleeps that precede it.
+    retry_delay = 200
+
     req =
       Req.new(
         base_url: "http://localhost:#{bypass.port}",
         redirect: false,
         retry: :safe_transient,
-        retry_delay: 10,
+        retry_delay: retry_delay,
         max_retries: 2
       )
       |> ReqLogger.attach()
@@ -187,13 +192,27 @@ defmodule ReqLoggerTest do
     assert length(error_lines) == 2
     assert length(info_lines) == 1
 
+    # Every attempt (including the 2nd and 3rd, which follow one and two retry sleeps
+    # respectively) must report a per-attempt duration far below a single retry delay.
+    # A cumulative timer would push those later attempts past `retry_delay`.
     for line <- req_logger_lines do
       assert_logged_duration(line)
+      assert logged_duration_us(line) < retry_delay * 1_000
     end
   end
 
   defp assert_logged_duration(log) do
     assert log =~ ~r/\(\d+(µs|ms|\d+\.\ds)\)(\e\[0m)?/
+  end
+
+  defp logged_duration_us(log) do
+    [_, value, unit] = Regex.run(~r/\((\d+(?:\.\d+)?)(µs|ms|s)\)/, log)
+
+    case unit do
+      "µs" -> String.to_integer(value)
+      "ms" -> String.to_integer(value) * 1_000
+      "s" -> round(String.to_float(value) * 1_000_000)
+    end
   end
 
   defp req_logger_lines(log) do
