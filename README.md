@@ -12,14 +12,11 @@ def deps do
 end
 ```
 
-## Usage
+<!-- MDOC !-->
+
+Logs the request method, URL, response status and duration with Elixir's Logger.
 
 ```elixir
-Mix.install([
-  {:req, "~> 0.5.0"},
-  {:req_logger, "~> 0.1.0", github: "adriankumpf/req_logger"}
-])
-
 req =
   Req.new()
   |> ReqLogger.attach()
@@ -28,9 +25,10 @@ Req.get!(req, url: "https://httpbin.org/status/201?a=1")
 # [info] GET https://httpbin.org/status/201 -> 201 (3ms)
 ```
 
-Query strings, fragments and userinfo are stripped from logged URLs.
+Query strings, fragments and userinfo are stripped from logged URLs to avoid logging common
+places for sensitive values.
 
-When Req retries a request, each retry attempt is logged separately with its own duration.
+When Req retries a request, each attempt is logged separately with its own duration.
 
 ## Options
 
