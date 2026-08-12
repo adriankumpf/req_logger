@@ -52,9 +52,10 @@ defmodule ReqLogger do
   defp log_message({request, response}) do
     level = log_level(response, request.options)
     start = Map.fetch!(request.private, @start_time_key)
-    duration = format_duration(System.monotonic_time() - start)
+    duration = System.monotonic_time() - start
 
-    Logger.log(level, fn -> format(request, response, duration) end)
+    # `Logger.log/2` is a macro, so the message is only built once the level passes.
+    Logger.log(level, format(request, response, duration))
 
     {request, response}
   end
@@ -62,9 +63,8 @@ defmodule ReqLogger do
   defp format(request, response, duration) do
     method = request.method |> to_string() |> String.upcase()
     url = format_url(request.url)
-    status = format_status(response)
 
-    [method, " ", url, " -> ", status, " (", duration, ")"]
+    [method, " ", url, " -> ", format_status(response), " (", format_duration(duration), ")"]
   end
 
   defp format_url(%URI{} = url) do
@@ -72,7 +72,7 @@ defmodule ReqLogger do
     |> URI.to_string()
   end
 
-  defp format_status(%Req.Response{status: status}), do: to_string(status)
+  defp format_status(%Req.Response{status: status}), do: Integer.to_string(status)
 
   defp format_status(exception) when is_exception(exception),
     do: ["error: ", Exception.message(exception)]
