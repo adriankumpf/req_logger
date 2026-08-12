@@ -28,7 +28,7 @@ Req.get!(req, url: "https://httpbin.org/status/201?a=1")
 # [info] GET https://httpbin.org/status/201 -> 201 (3ms)
 ```
 
-Query strings and fragments are stripped from logged URLs.
+Query strings, fragments and userinfo are stripped from logged URLs.
 
 When Req retries a request, each retry attempt is logged separately with its own duration.
 

@@ -4,8 +4,8 @@ defmodule ReqLogger do
 
   Logs the request method, URL, response status and duration with Elixir's Logger.
 
-  Query strings and URL fragments are stripped from logged URLs to avoid logging common places
-  for sensitive values.
+  Query strings, URL fragments and userinfo are stripped from logged URLs to avoid logging
+  common places for sensitive values.
 
   When Req retries a request, each retry attempt is logged separately.
 
@@ -76,8 +76,7 @@ defmodule ReqLogger do
   end
 
   defp format_url(%URI{} = url) do
-    %URI{url | query: nil, fragment: nil}
-    |> URI.to_string()
+    URI.to_string(%{url | query: nil, fragment: nil, userinfo: nil})
   end
 
   defp format_status(%Req.Response{status: status}), do: Integer.to_string(status)
