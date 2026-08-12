@@ -71,6 +71,16 @@ defmodule ReqLoggerTest do
     refute log =~ "secret"
   end
 
+  test "strips userinfo from the logged URL" do
+    expect_status(200)
+    req = new_req(base_url: "http://user:hunter2@localhost")
+
+    log = capture_log(fn -> req |> ReqLogger.attach() |> Req.get(url: "/secrets") end)
+
+    assert log =~ "GET #{@url}/secrets -> 200"
+    refute log =~ "hunter2"
+  end
+
   test "logs each retry attempt with its own duration" do
     Req.Test.expect(__MODULE__, 2, &Plug.Conn.resp(&1, 500, ""))
     Req.Test.expect(__MODULE__, 1, &Plug.Conn.resp(&1, 200, ""))
