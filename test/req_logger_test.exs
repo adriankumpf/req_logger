@@ -5,6 +5,8 @@ defmodule ReqLoggerTest do
 
   @url "http://localhost"
 
+  @duration ~r/\((\d+(?:\.\d+)?)(µs|ms|s)\)/
+
   setup {Req.Test, :set_req_test_from_context}
   setup {Req.Test, :verify_on_exit!}
 
@@ -197,11 +199,11 @@ defmodule ReqLoggerTest do
   end
 
   defp assert_logged_duration(log) do
-    assert log =~ ~r/\(\d+(µs|ms|\d+\.\ds)\)(\e\[0m)?/
+    assert log =~ @duration
   end
 
   defp logged_duration_us(log) do
-    [_, value, unit] = Regex.run(~r/\((\d+(?:\.\d+)?)(µs|ms|s)\)/, log)
+    [_, value, unit] = Regex.run(@duration, log)
 
     case unit do
       "µs" -> String.to_integer(value)
