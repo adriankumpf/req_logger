@@ -82,10 +82,12 @@ defmodule ReqLogger do
   defp format_status(exception) when is_exception(exception),
     do: ["error: ", Exception.message(exception)]
 
+  # Absent when an earlier request step short-circuited before the timer ran.
   defp format_duration(request) do
-    start = Map.fetch!(request.private, @start_time_key)
-
-    [" (", humanize_duration(System.monotonic_time(:microsecond) - start), ")"]
+    case Req.Request.get_private(request, @start_time_key) do
+      nil -> []
+      start -> [" (", humanize_duration(System.monotonic_time(:microsecond) - start), ")"]
+    end
   end
 
   defp humanize_duration(us) when us < 1_000, do: "#{us}µs"
