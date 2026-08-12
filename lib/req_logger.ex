@@ -61,7 +61,7 @@ defmodule ReqLogger do
   end
 
   defp format(request, response, duration) do
-    method = request.method |> to_string() |> String.upcase()
+    method = request.method |> to_string() |> String.upcase(:ascii)
     url = format_url(request.url)
 
     [method, " ", url, " -> ", format_status(response), " (", format_duration(duration), ")"]
