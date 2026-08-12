@@ -12,9 +12,11 @@ defmodule ReqLogger.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
+      package: package(),
       name: "ReqLogger",
       description: "A Req plugin that logs request method, URL, response status and duration.",
-      source_url: @source_url
+      source_url: @source_url,
+      homepage_url: @source_url
     ]
   end
 
@@ -32,10 +34,22 @@ defmodule ReqLogger.MixProject do
     ]
   end
 
+  defp package do
+    [
+      files: ["lib", "mix.exs", "README.md", "LICENSE", "CHANGELOG.md"],
+      maintainers: ["Adrian Kumpf"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => @source_url,
+        "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
+      }
+    ]
+  end
+
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "CHANGELOG.md"],
+      extras: ["README.md", "CHANGELOG.md", LICENSE: [title: "License"]],
       source_ref: "v#{@version}"
     ]
   end
