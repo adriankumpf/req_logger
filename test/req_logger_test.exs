@@ -44,8 +44,27 @@ defmodule ReqLoggerTest do
   test "allows to configure the log level per request", %{req: req} do
     expect_status(200)
 
+    assert capture_log(fn -> Req.get(req, log_level: :debug) end) =~
+             "[debug] GET #{@url} -> 200"
+  end
+
+  test "allows to configure the log level with a function", %{req: req} do
+    expect_status(200)
+
     assert capture_log(fn -> Req.get(req, log_level: &custom_log_level/1) end) =~
              "[debug] GET #{@url} -> 200"
+  end
+
+  test "raises on an invalid log level before the request is sent", %{req: req} do
+    assert_raise ArgumentError, ~r/expected :log_level/, fn ->
+      Req.get(req, log_level: "debug")
+    end
+  end
+
+  test "raises on an invalid log level when attaching the plugin" do
+    assert_raise ArgumentError, ~r/expected :log_level/, fn ->
+      ReqLogger.attach(new_req(), log_level: "debug")
+    end
   end
 
   test "allows to configure the log level when attaching the plugin" do
@@ -55,9 +74,9 @@ defmodule ReqLoggerTest do
     assert capture_log(fn -> Req.get(req) end) =~ "[debug] GET #{@url} -> 200"
   end
 
-  test "custom log_level option is ignored for exceptions" do
+  test "the configured level is ignored for exceptions" do
     Req.Test.expect(__MODULE__, &Req.Test.transport_error(&1, :econnrefused))
-    req = new_req() |> ReqLogger.attach(log_level: &custom_log_level/1)
+    req = new_req() |> ReqLogger.attach(log_level: :debug)
 
     assert capture_log(fn -> Req.get(req) end) =~ "[error]"
   end

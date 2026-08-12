@@ -10,9 +10,9 @@ defmodule ReqLogger do
 
   @start_time_key :req_logger_start_time
 
-  @type log_level_fun :: (Req.Response.t() -> Logger.level())
-  @type log_level_option :: {:log_level, log_level_fun()}
-  @type opts :: [log_level_option()]
+  @levels [:emergency, :alert, :critical, :error, :warning, :notice, :info, :debug]
+
+  @type opts :: [log_level: Logger.level() | (Req.Response.t() -> Logger.level())]
 
   @doc """
   Attaches the logger to the given request.
@@ -30,20 +30,35 @@ defmodule ReqLogger do
   """
   @spec attach(Req.Request.t(), opts()) :: Req.Request.t()
   def attach(request, opts \\ []) do
+    validate_level!(opts[:log_level])
+
     request
     |> Req.Request.register_options([:log_level])
     |> Req.Request.merge_options(opts)
-    |> Req.Request.append_request_steps(req_logger_start_time: &put_start_time/1)
+    |> Req.Request.append_request_steps(req_logger_start_time: &start_timer/1)
     |> Req.Request.prepend_response_steps(req_logger_log_message: &log_message/1)
     |> Req.Request.prepend_error_steps(req_logger_log_message: &log_message/1)
   end
 
-  defp put_start_time(request) do
+  # Validating from a request step rejects a per-request override before the request is sent.
+  # Raising from the response step would discard the response the caller was about to get.
+  defp start_timer(request) do
+    validate_level!(Req.Request.get_option(request, :log_level))
+
     Req.Request.put_private(request, @start_time_key, System.monotonic_time(:microsecond))
   end
 
+  defp validate_level!(level) when is_nil(level) or is_function(level, 1) or level in @levels,
+    do: :ok
+
+  defp validate_level!(level) do
+    raise ArgumentError,
+          "expected :log_level to be a 1-arity function or one of " <>
+            "#{inspect(@levels)}, got: #{inspect(level)}"
+  end
+
   defp log_message({request, response}) do
-    level = log_level(response, request.options)
+    level = log_level(request, response)
 
     # `Logger.log/2` is a macro, so the message is only built once the level passes.
     Logger.log(level, format(request, response))
@@ -51,12 +66,18 @@ defmodule ReqLogger do
     {request, response}
   end
 
-  defp log_level(exception, _opts) when is_exception(exception), do: :error
-  defp log_level(response, %{log_level: fun}) when is_function(fun, 1), do: fun.(response)
-  defp log_level(response, _opts), do: default_log_level(response)
+  defp log_level(_request, exception) when is_exception(exception), do: :error
 
-  defp default_log_level(%Req.Response{} = res) when res.status >= 400, do: :error
-  defp default_log_level(%Req.Response{} = res) when res.status >= 300, do: :warning
+  defp log_level(request, response) do
+    case Req.Request.get_option(request, :log_level) do
+      nil -> default_log_level(response)
+      fun when is_function(fun, 1) -> fun.(response)
+      level -> level
+    end
+  end
+
+  defp default_log_level(%Req.Response{status: status}) when status >= 400, do: :error
+  defp default_log_level(%Req.Response{status: status}) when status >= 300, do: :warning
   defp default_log_level(%Req.Response{}), do: :info
 
   defp format(request, response) do
