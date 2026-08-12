@@ -46,13 +46,13 @@ defmodule ReqLogger do
   end
 
   defp put_start_time(request) do
-    Req.Request.put_private(request, @start_time_key, System.monotonic_time())
+    Req.Request.put_private(request, @start_time_key, System.monotonic_time(:microsecond))
   end
 
   defp log_message({request, response}) do
     level = log_level(response, request.options)
     start = Map.fetch!(request.private, @start_time_key)
-    duration = System.monotonic_time() - start
+    duration = System.monotonic_time(:microsecond) - start
 
     # `Logger.log/2` is a macro, so the message is only built once the level passes.
     Logger.log(level, format(request, response, duration))
@@ -84,9 +84,7 @@ defmodule ReqLogger do
   defp format_status(exception) when is_exception(exception),
     do: ["error: ", Exception.message(exception)]
 
-  defp format_duration(duration_native) do
-    duration_us = System.convert_time_unit(duration_native, :native, :microsecond)
-
+  defp format_duration(duration_us) do
     cond do
       duration_us < 1_000 -> "#{duration_us}µs"
       duration_us < 1_000_000 -> "#{div(duration_us, 1_000)}ms"
