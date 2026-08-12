@@ -32,7 +32,7 @@ When Req retries a request, each attempt is logged separately with its own durat
 
 ## Options
 
-### `:log_level`
+### `:req_logger_level`
 
 Either a `t:Logger.level/0` or a function that receives the `Req.Response` and returns one.
 
@@ -42,7 +42,7 @@ Defaults to `:info` for 2xx responses, `:warning` for 3xx responses and `:error`
 ```elixir
 req =
   Req.new()
-  |> ReqLogger.attach(log_level: fn
+  |> ReqLogger.attach(req_logger_level: fn
     %Req.Response{status: status} when status >= 500 -> :error
     %Req.Response{} -> :debug
   end)
