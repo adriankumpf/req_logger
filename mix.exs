@@ -1,7 +1,7 @@
 defmodule ReqLogger.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/adriankumpf/req_logger"
 
   def project do
@@ -35,7 +35,7 @@ defmodule ReqLogger.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: ["README.md", "CHANGELOG.md"],
       source_ref: "v#{@version}"
     ]
   end
