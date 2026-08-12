@@ -10,7 +10,7 @@ defmodule ReqLogger do
 
   @start_time_key :req_logger_start_time
 
-  @levels [:emergency, :alert, :critical, :error, :warning, :notice, :info, :debug]
+  @levels Enum.sort(Logger.levels())
 
   @type opts :: [req_logger_level: Logger.level() | (Req.Response.t() -> Logger.level())]
 
