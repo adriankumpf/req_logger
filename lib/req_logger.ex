@@ -12,14 +12,14 @@ defmodule ReqLogger do
 
   @levels [:emergency, :alert, :critical, :error, :warning, :notice, :info, :debug]
 
-  @type opts :: [log_level: Logger.level() | (Req.Response.t() -> Logger.level())]
+  @type opts :: [req_logger_level: Logger.level() | (Req.Response.t() -> Logger.level())]
 
   @doc """
   Attaches the logger to the given request.
 
   ## Request Options
 
-    * `:log_level` - the level to log responses at. See the module documentation.
+    * `:req_logger_level` - the level to log responses at. See the module documentation.
 
   ## Examples
 
@@ -30,10 +30,10 @@ defmodule ReqLogger do
   """
   @spec attach(Req.Request.t(), opts()) :: Req.Request.t()
   def attach(request, opts \\ []) do
-    validate_level!(opts[:log_level])
+    validate_level!(opts[:req_logger_level])
 
     request
-    |> Req.Request.register_options([:log_level])
+    |> Req.Request.register_options([:req_logger_level])
     |> Req.Request.merge_options(opts)
     |> Req.Request.append_request_steps(req_logger_start_time: &start_timer/1)
     |> Req.Request.prepend_response_steps(req_logger_log_message: &log_message/1)
@@ -43,7 +43,7 @@ defmodule ReqLogger do
   # Validating from a request step rejects a per-request override before the request is sent.
   # Raising from the response step would discard the response the caller was about to get.
   defp start_timer(request) do
-    validate_level!(Req.Request.get_option(request, :log_level))
+    validate_level!(Req.Request.get_option(request, :req_logger_level))
 
     Req.Request.put_private(request, @start_time_key, System.monotonic_time(:microsecond))
   end
@@ -53,7 +53,7 @@ defmodule ReqLogger do
 
   defp validate_level!(level) do
     raise ArgumentError,
-          "expected :log_level to be a 1-arity function or one of " <>
+          "expected :req_logger_level to be a 1-arity function or one of " <>
             "#{inspect(@levels)}, got: #{inspect(level)}"
   end
 
@@ -69,7 +69,7 @@ defmodule ReqLogger do
   defp log_level(_request, exception) when is_exception(exception), do: :error
 
   defp log_level(request, response) do
-    case Req.Request.get_option(request, :log_level) do
+    case Req.Request.get_option(request, :req_logger_level) do
       nil -> default_log_level(response)
       fun when is_function(fun, 1) -> fun.(response)
       level -> level
