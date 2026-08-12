@@ -26,7 +26,7 @@ defmodule ReqLogger.MixProject do
 
   defp deps do
     [
-      {:req, "~> 0.5"},
+      {:req, "~> 0.7"},
       {:plug, "~> 1.0", only: :test},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false}
     ]
