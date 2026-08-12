@@ -1,5 +1,9 @@
 # ReqLogger
 
+[![CI](https://github.com/adriankumpf/req_logger/actions/workflows/ci.yml/badge.svg)](https://github.com/adriankumpf/req_logger/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/req_logger.svg)](https://hex.pm/packages/req_logger)
+[![Documentation](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/req_logger)
+
 [Req](https://github.com/wojtekmach/req) Logger plugin.
 
 ## Installation
@@ -7,10 +11,12 @@
 ```elixir
 def deps do
   [
-    {:req_logger, "~> 0.1.0", github: "adriankumpf/req_logger"}
+    {:req_logger, "~> 0.2.0"}
   ]
 end
 ```
+
+The documentation is available on [HexDocs](https://hexdocs.pm/req_logger).
 
 <!-- MDOC !-->
 

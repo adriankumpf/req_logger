@@ -2,6 +2,8 @@
 
 ## v0.2.0 (2026-08-12)
 
+First release published to Hex. Earlier versions were installed from git.
+
 ### Breaking changes
 
 - Require Elixir 1.16 or later, up from 1.15.
