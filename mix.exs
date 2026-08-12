@@ -28,7 +28,7 @@ defmodule ReqLogger.MixProject do
     [
       {:req, "~> 0.7"},
       {:plug, "~> 1.0", only: :test},
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false}
     ]
   end
 
