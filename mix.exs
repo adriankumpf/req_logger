@@ -1,14 +1,20 @@
 defmodule ReqLogger.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @source_url "https://github.com/adriankumpf/req_logger"
+
   def project do
     [
       app: :req_logger,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      name: "ReqLogger",
+      description: "A Req plugin that logs request method, URL, response status and duration.",
+      source_url: @source_url
     ]
   end
 
@@ -29,7 +35,8 @@ defmodule ReqLogger.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"]
+      extras: ["README.md"],
+      source_ref: "v#{@version}"
     ]
   end
 end
