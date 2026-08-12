@@ -34,10 +34,15 @@ When Req retries a request, each attempt is logged separately with its own durat
 
 ### `:req_logger_level`
 
-Either a `t:Logger.level/0` or a function that receives the `Req.Response` and returns one.
+Either a `t:Logger.level/0`:
 
-Defaults to `:error` for 5xx responses, `:warning` for 4xx responses and `:info` for everything
-else. Failed requests are always logged as `:error`, regardless of this option.
+```elixir
+req =
+  Req.new()
+  |> ReqLogger.attach(req_logger_level: :debug)
+```
+
+or a function that receives the `Req.Response` and returns one:
 
 ```elixir
 req =
@@ -47,6 +52,9 @@ req =
     %Req.Response{} -> :debug
   end)
 ```
+
+Defaults to `:error` for 5xx responses, `:warning` for 4xx responses and `:info` for everything
+else. Failed requests are always logged as `:error`, regardless of this option.
 
 Invalid values raise an `ArgumentError` when the plugin is attached, or — for a per-request
 override — before the request is sent.
