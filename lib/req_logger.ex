@@ -60,6 +60,14 @@ defmodule ReqLogger do
     {request, response}
   end
 
+  defp log_level(exception, _opts) when is_exception(exception), do: :error
+  defp log_level(response, %{log_level: fun}) when is_function(fun, 1), do: fun.(response)
+  defp log_level(response, _opts), do: default_log_level(response)
+
+  defp default_log_level(%Req.Response{} = res) when res.status >= 400, do: :error
+  defp default_log_level(%Req.Response{} = res) when res.status >= 300, do: :warning
+  defp default_log_level(%Req.Response{}), do: :info
+
   defp format(request, response, duration) do
     method = request.method |> to_string() |> String.upcase(:ascii)
     url = format_url(request.url)
@@ -86,12 +94,4 @@ defmodule ReqLogger do
       true -> "#{Float.round(duration_us / 1_000_000, 1)}s"
     end
   end
-
-  defp log_level(exception, _opts) when is_exception(exception), do: :error
-  defp log_level(response, %{log_level: fun}) when is_function(fun, 1), do: fun.(response)
-  defp log_level(response, _opts), do: default_log_level(response)
-
-  defp default_log_level(%Req.Response{} = res) when res.status >= 400, do: :error
-  defp default_log_level(%Req.Response{} = res) when res.status >= 300, do: :warning
-  defp default_log_level(%Req.Response{}), do: :info
 end
