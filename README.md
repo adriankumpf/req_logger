@@ -36,8 +36,8 @@ When Req retries a request, each attempt is logged separately with its own durat
 
 Either a `t:Logger.level/0` or a function that receives the `Req.Response` and returns one.
 
-Defaults to `:info` for 2xx responses, `:warning` for 3xx responses and `:error` for 4xx and
-5xx responses. Failed requests are always logged as `:error`, regardless of this option.
+Defaults to `:error` for 5xx responses, `:warning` for 4xx responses and `:info` for everything
+else. Failed requests are always logged as `:error`, regardless of this option.
 
 ```elixir
 req =

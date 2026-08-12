@@ -14,7 +14,7 @@ defmodule ReqLoggerTest do
     {:ok, req: new_req() |> ReqLogger.attach()}
   end
 
-  for {status, level} <- [{200, :info}, {308, :warning}, {404, :error}, {503, :error}] do
+  for {status, level} <- [{200, :info}, {308, :info}, {404, :warning}, {503, :error}] do
     test "logs #{status} responses at #{inspect(level)}", %{req: req} do
       expect_status(unquote(status))
 
