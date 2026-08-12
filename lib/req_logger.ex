@@ -1,21 +1,10 @@
 defmodule ReqLogger do
-  @moduledoc """
-  `Req` Logger plugin.
+  @external_resource "README.md"
 
-  Logs the request method, URL, response status and duration with Elixir's Logger.
-
-  Query strings, URL fragments and userinfo are stripped from logged URLs to avoid logging
-  common places for sensitive values.
-
-  When Req retries a request, each retry attempt is logged separately.
-
-  ## Options
-
-  - `:log_level` - custom function that receives the `Req.Response` for calculating log level.
-    Defaults to `:info` for 2xx responses, `:warning` for 3xx responses and `:error` for 4xx and
-    5xx responses. Failed requests are always logged as `:error`.
-
-  """
+  @moduledoc "README.md"
+             |> File.read!()
+             |> String.split("<!-- MDOC !-->")
+             |> Enum.fetch!(1)
 
   require Logger
 

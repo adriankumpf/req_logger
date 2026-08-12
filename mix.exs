@@ -28,7 +28,7 @@ defmodule ReqLogger.MixProject do
 
   defp docs do
     [
-      main: "ReqLogger",
+      main: "readme",
       extras: ["README.md"]
     ]
   end
