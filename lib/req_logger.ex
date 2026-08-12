@@ -17,6 +17,10 @@ defmodule ReqLogger do
   @doc """
   Attaches the logger to the given request.
 
+  ## Request Options
+
+    * `:log_level` - the level to log responses at. See the module documentation.
+
   ## Examples
 
       req = Req.new() |> ReqLogger.attach()
