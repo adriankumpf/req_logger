@@ -76,8 +76,8 @@ defmodule ReqLogger do
     end
   end
 
-  defp default_log_level(%Req.Response{status: status}) when status >= 400, do: :error
-  defp default_log_level(%Req.Response{status: status}) when status >= 300, do: :warning
+  defp default_log_level(%Req.Response{status: status}) when status >= 500, do: :error
+  defp default_log_level(%Req.Response{status: status}) when status >= 400, do: :warning
   defp default_log_level(%Req.Response{}), do: :info
 
   defp format(request, response) do
