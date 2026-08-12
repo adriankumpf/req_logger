@@ -204,12 +204,9 @@ defmodule ReqLoggerTest do
 
   defp logged_duration_us(log) do
     [_, value, unit] = Regex.run(@duration, log)
+    {value, ""} = Float.parse(value)
 
-    case unit do
-      "µs" -> String.to_integer(value)
-      "ms" -> String.to_integer(value) * 1_000
-      "s" -> round(String.to_float(value) * 1_000_000)
-    end
+    round(value * %{"µs" => 1, "ms" => 1_000, "s" => 1_000_000}[unit])
   end
 
   defp req_logger_lines(log) do
