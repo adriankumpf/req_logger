@@ -3,98 +3,101 @@ defmodule ReqLoggerTest do
 
   import ExUnit.CaptureLog
 
-  setup do
-    bypass = Bypass.open()
+  @url "http://localhost"
 
+  setup {Req.Test, :set_req_test_from_context}
+  setup {Req.Test, :verify_on_exit!}
+
+  setup do
     req =
-      Req.new(base_url: "http://localhost:#{bypass.port}", redirect: false, retry: false)
+      Req.new(base_url: @url, plug: {Req.Test, __MODULE__}, redirect: false, retry: false)
       |> ReqLogger.attach()
 
-    {:ok, bypass: bypass, req: req}
+    {:ok, req: req}
   end
 
-  test "logs successful requests", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "logs successful requests", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     log =
       capture_log(fn ->
         Req.get(req, url: "/health")
       end)
 
-    assert log =~ "[info] GET http://localhost:#{bypass.port}/health -> 200"
+    assert log =~ "[info] GET #{@url}/health -> 200"
     assert_logged_duration(log)
   end
 
-  test "logs 3xx requests with log level :warning", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 308, ""))
+  test "logs 3xx requests with log level :warning", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 308, ""))
 
     log =
       capture_log(fn ->
         Req.get(req)
       end)
 
-    assert log =~ "[warning] GET http://localhost:#{bypass.port} -> 308"
+    assert log =~ "[warning] GET #{@url} -> 308"
     assert_logged_duration(log)
   end
 
-  test "logs 4xx requests with log level :error", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 404, ""))
+  test "logs 4xx requests with log level :error", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 404, ""))
 
     log =
       capture_log(fn ->
         Req.get(req)
       end)
 
-    assert log =~ "[error] GET http://localhost:#{bypass.port} -> 404"
+    assert log =~ "[error] GET #{@url} -> 404"
     assert_logged_duration(log)
   end
 
-  test "logs 5xx requests with log level :error", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 503, ""))
+  test "logs 5xx requests with log level :error", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 503, ""))
 
     log =
       capture_log(fn ->
         Req.get(req)
       end)
 
-    assert log =~ "[error] GET http://localhost:#{bypass.port} -> 503"
+    assert log =~ "[error] GET #{@url} -> 503"
     assert_logged_duration(log)
   end
 
-  test "logs failed requests with log level :error", %{bypass: bypass, req: req} do
-    Bypass.down(bypass)
+  test "logs failed requests with log level :error", %{req: req} do
+    Req.Test.expect(__MODULE__, &Req.Test.transport_error(&1, :econnrefused))
 
     log =
       capture_log(fn ->
         Req.get(req)
       end)
 
-    assert log =~ "[error] GET http://localhost:#{bypass.port} -> error: connection refused"
+    assert log =~ "[error] GET #{@url} -> error: connection refused"
     assert_logged_duration(log)
   end
 
-  test "allows to configure the log level", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "allows to configure the log level", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     assert capture_log(fn ->
              Req.get(req, log_level: &custom_log_level/1)
-           end) =~ "[debug] GET http://localhost:#{bypass.port} -> 200"
+           end) =~ "[debug] GET #{@url} -> 200"
   end
 
-  test "allows to configure the log level when attaching the plugin", %{bypass: bypass} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "allows to configure the log level when attaching the plugin" do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     req =
-      Req.new(base_url: "http://localhost:#{bypass.port}", redirect: false, retry: false)
+      Req.new(base_url: @url, plug: {Req.Test, __MODULE__}, redirect: false, retry: false)
       |> ReqLogger.attach(log_level: &custom_log_level/1)
 
     assert capture_log(fn ->
              Req.get(req)
-           end) =~ "[debug] GET http://localhost:#{bypass.port} -> 200"
+           end) =~ "[debug] GET #{@url} -> 200"
   end
 
-  test "strips query string from logged URL", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "strips query string from logged URL", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     log =
       capture_log(fn ->
@@ -106,8 +109,8 @@ defmodule ReqLoggerTest do
     refute log =~ "token"
   end
 
-  test "strips fragment from logged URL", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "strips fragment from logged URL", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     log =
       capture_log(fn ->
@@ -118,8 +121,8 @@ defmodule ReqLoggerTest do
     refute log =~ "secret"
   end
 
-  test "strips query string and fragment from logged URL", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 200, ""))
+  test "strips query string and fragment from logged URL", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 200, ""))
 
     log =
       capture_log(fn ->
@@ -131,19 +134,19 @@ defmodule ReqLoggerTest do
     refute log =~ "token"
   end
 
-  test "logs request method", %{bypass: bypass, req: req} do
-    Bypass.expect_once(bypass, &Plug.Conn.resp(&1, 201, ""))
+  test "logs request method", %{req: req} do
+    Req.Test.expect(__MODULE__, &Plug.Conn.resp(&1, 201, ""))
 
     assert capture_log(fn ->
              Req.post(req, url: "/events", json: %{name: "created"})
-           end) =~ "[info] POST http://localhost:#{bypass.port}/events -> 201"
+           end) =~ "[info] POST #{@url}/events -> 201"
   end
 
-  test "custom log_level option is ignored for exceptions", %{bypass: bypass} do
-    Bypass.down(bypass)
+  test "custom log_level option is ignored for exceptions" do
+    Req.Test.expect(__MODULE__, &Req.Test.transport_error(&1, :econnrefused))
 
     req =
-      Req.new(base_url: "http://localhost:#{bypass.port}", redirect: false, retry: false)
+      Req.new(base_url: @url, plug: {Req.Test, __MODULE__}, redirect: false, retry: false)
       |> ReqLogger.attach(log_level: fn _ -> :debug end)
 
     assert capture_log(fn ->
@@ -151,18 +154,9 @@ defmodule ReqLoggerTest do
            end) =~ "[error]"
   end
 
-  test "logs each retry attempt with duration", %{bypass: bypass} do
-    {:ok, agent} = Agent.start_link(fn -> 0 end)
-
-    Bypass.expect(bypass, fn conn ->
-      n = Agent.get_and_update(agent, fn n -> {n + 1, n + 1} end)
-
-      if n < 3 do
-        Plug.Conn.resp(conn, 500, "")
-      else
-        Plug.Conn.resp(conn, 200, "")
-      end
-    end)
+  test "logs each retry attempt with duration" do
+    Req.Test.expect(__MODULE__, 2, &Plug.Conn.resp(&1, 500, ""))
+    Req.Test.expect(__MODULE__, 1, &Plug.Conn.resp(&1, 200, ""))
 
     # A large retry delay makes the per-attempt vs. cumulative distinction observable:
     # the timer is reset at the start of each attempt (a request step re-run on every
@@ -171,7 +165,8 @@ defmodule ReqLoggerTest do
 
     req =
       Req.new(
-        base_url: "http://localhost:#{bypass.port}",
+        base_url: @url,
+        plug: {Req.Test, __MODULE__},
         redirect: false,
         retry: :safe_transient,
         retry_delay: retry_delay,
@@ -218,7 +213,7 @@ defmodule ReqLoggerTest do
   defp req_logger_lines(log) do
     log
     |> String.split("\n", trim: true)
-    |> Enum.filter(&(&1 =~ "GET http://localhost:"))
+    |> Enum.filter(&(&1 =~ "GET #{@url}"))
   end
 
   defp custom_log_level(%Req.Response{}), do: :debug
