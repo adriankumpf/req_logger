@@ -81,6 +81,18 @@ defmodule ReqLoggerTest do
     refute log =~ "hunter2"
   end
 
+  test "leaves the pipeline result untouched when an earlier step short-circuits" do
+    req =
+      new_req()
+      |> Req.Request.append_request_steps(short_circuit: &{&1, Req.Response.new(status: 200)})
+      |> ReqLogger.attach()
+
+    log = capture_log(fn -> assert {:ok, %Req.Response{status: 200}} = Req.get(req) end)
+
+    assert log =~ "[info] GET #{@url} -> 200"
+    refute log =~ @duration
+  end
+
   test "logs each retry attempt with its own duration" do
     Req.Test.expect(__MODULE__, 2, &Plug.Conn.resp(&1, 500, ""))
     Req.Test.expect(__MODULE__, 1, &Plug.Conn.resp(&1, 200, ""))
