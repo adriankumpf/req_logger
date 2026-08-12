@@ -51,11 +51,9 @@ defmodule ReqLogger do
 
   defp log_message({request, response}) do
     level = log_level(response, request.options)
-    start = Map.fetch!(request.private, @start_time_key)
-    duration = System.monotonic_time(:microsecond) - start
 
     # `Logger.log/2` is a macro, so the message is only built once the level passes.
-    Logger.log(level, format(request, response, duration))
+    Logger.log(level, format(request, response))
 
     {request, response}
   end
@@ -68,11 +66,11 @@ defmodule ReqLogger do
   defp default_log_level(%Req.Response{} = res) when res.status >= 300, do: :warning
   defp default_log_level(%Req.Response{}), do: :info
 
-  defp format(request, response, duration) do
+  defp format(request, response) do
     method = request.method |> to_string() |> String.upcase(:ascii)
     url = format_url(request.url)
 
-    [method, " ", url, " -> ", format_status(response), " (", format_duration(duration), ")"]
+    [method, " ", url, " -> ", format_status(response), format_duration(request)]
   end
 
   defp format_url(%URI{} = url) do
@@ -84,11 +82,13 @@ defmodule ReqLogger do
   defp format_status(exception) when is_exception(exception),
     do: ["error: ", Exception.message(exception)]
 
-  defp format_duration(duration_us) do
-    cond do
-      duration_us < 1_000 -> "#{duration_us}µs"
-      duration_us < 1_000_000 -> "#{div(duration_us, 1_000)}ms"
-      true -> "#{Float.round(duration_us / 1_000_000, 1)}s"
-    end
+  defp format_duration(request) do
+    start = Map.fetch!(request.private, @start_time_key)
+
+    [" (", humanize_duration(System.monotonic_time(:microsecond) - start), ")"]
   end
+
+  defp humanize_duration(us) when us < 1_000, do: "#{us}µs"
+  defp humanize_duration(us) when us < 1_000_000, do: "#{div(us, 1_000)}ms"
+  defp humanize_duration(us), do: "#{Float.round(us / 1_000_000, 1)}s"
 end
