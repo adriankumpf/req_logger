@@ -26,12 +26,12 @@ defmodule ReqLogger do
   @type opts :: [log_level_option()]
 
   @doc """
-  Runs the plugin.
+  Attaches the logger to the given request.
 
   ## Examples
 
-      iex> req = Req.new() |> ReqLogger.attach()
-      iex> Req.get!(req, url: "https://httpbin.org/status/201?a=1")
+      req = Req.new() |> ReqLogger.attach()
+      Req.get!(req, url: "https://httpbin.org/status/201?a=1")
       # [info] GET https://httpbin.org/status/201 -> 201 (3ms)
 
   """
